@@ -94,7 +94,7 @@ int main(int argc, char *args[])
 
 
 
-				// snakeHead.x = (snakeHead.x + SCREEN_WIDTH - step) % SCREEN_WIDTH;
+				snakeHead.x = (snakeHead.x + SCREEN_WIDTH - step) % SCREEN_WIDTH;
 				
 
 				if (e.key.keysym.sym == SDLK_LEFT)
