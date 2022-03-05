@@ -7,8 +7,8 @@
 #include <ctime>
 
 // Screen dimension constants
-const int SCREEN_WIDTH = 600;
-const int SCREEN_HEIGHT = 600;
+const int SCREEN_WIDTH = 400;
+const int SCREEN_HEIGHT = 400;
 
 // The window we'll be rendering to
 SDL_Window *gWindow = NULL;
@@ -30,8 +30,9 @@ enum
 	DOWN
 };
 
-void snakeMovement(SDL_Rect &snakeHead, SDL_Rect *snakeBody, SDL_Rect &point, int &snakeBodyLength, int direction)
+void snakeMove(SDL_Rect &snakeHead, SDL_Rect *snakeBody, SDL_Rect &point, int &snakeBodyLength, int direction)
 {
+	// di chuyển phần thân
 	for (int i = snakeBodyLength - 1; i > 0; i--)
 	{
 		snakeBody[i].x = snakeBody[i - 1].x;
@@ -61,9 +62,9 @@ void snakeMovement(SDL_Rect &snakeHead, SDL_Rect *snakeBody, SDL_Rect &point, in
 	SDL_RenderClear(gRenderer);
 
 	// ve lai cai dau
-	SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 255);
+	SDL_SetRenderDrawColor(gRenderer, 255, 255, 0, 255);
 	SDL_RenderFillRect(gRenderer, &snakeHead);
-	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
+	SDL_SetRenderDrawColor(gRenderer, 102, 255, 51, 0xFF);
 	for (int i = 0; i < snakeBodyLength; i++)
 	{
 		SDL_RenderFillRect(gRenderer, &snakeBody[i]);
@@ -78,11 +79,11 @@ void snakeMovement(SDL_Rect &snakeHead, SDL_Rect *snakeBody, SDL_Rect &point, in
 		snakeBody[snakeBodyLength - 1].y = snakeBody[snakeBodyLength - 2].y;
 	}
 	// vẽ lại cái để ăn
-	SDL_SetRenderDrawColor(gRenderer, 0, 255, 255, 0xFF);
+	SDL_SetRenderDrawColor(gRenderer, 255, 51, 0, 0xFF);
 	SDL_RenderFillRect(gRenderer, &point);
 
 	SDL_RenderPresent(gRenderer);
-	SDL_Delay(120);
+	SDL_Delay(100);
 }
 
 int main(int argc, char *args[])
@@ -138,43 +139,17 @@ int main(int argc, char *args[])
 	SDL_Event e;
 	while (!quit)
 	{
-		// tự di chuyển
-		// for (int i = snakeBodyLength - 1; i > 0; i--)
-		// {
-		// 	snakeBody[i].x = snakeBody[i - 1].x;
-		// 	snakeBody[i].y = snakeBody[i - 1].y;
-		// }
-		// snakeBody[0].x = snakeHead.x;
-		// snakeBody[0].y = snakeHead.y;
-		// snakeHead.x = (snakeHead.x + SCREEN_WIDTH - step) % SCREEN_WIDTH;
-		// SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 255);
-		// SDL_RenderClear(gRenderer);
-
-		// // ve lai cai dau
-		// SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 255);
-		// SDL_RenderFillRect(gRenderer, &snakeHead);
-		// SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
-		// for (int i = 0; i < snakeBodyLength; i++)
-		// {
-		// 	SDL_RenderFillRect(gRenderer, &snakeBody[i]);
-		// }
-		// if (snakeHead.x == point.x && snakeHead.y == point.y)
-		// {
-		// 	// chuyển point ra chỗ khác
-		// 	point.x = (rand() % (SCREEN_HEIGHT / 10 + 1)) * 10;
-		// 	point.y = (rand() % (SCREEN_WIDTH / 10 + 1)) * 10;
-		// 	snakeBodyLength++;
-		// 	snakeBody[snakeBodyLength - 1].x = snakeBody[snakeBodyLength - 2].x;
-		// 	snakeBody[snakeBodyLength - 1].y = snakeBody[snakeBodyLength - 2].y;
-		// }
-		// // vẽ lại cái để ăn
-		// SDL_SetRenderDrawColor(gRenderer, 0, 255, 255, 0xFF);
-		// SDL_RenderFillRect(gRenderer, &point);
-
-		// SDL_RenderPresent(gRenderer);
-		// SDL_Delay(100);
-
-		snakeMovement(snakeHead, snakeBody, point, snakeBodyLength, direction);
+		snakeMove(snakeHead, snakeBody, point, snakeBodyLength, direction);
+		
+		// nếu đâm vào đuôi
+		for (int i = 0; i < snakeBodyLength; i++)
+		{
+			if (snakeHead.x == snakeBody[i].x && snakeHead.y == snakeBody[i].y)
+			{
+				quit = true;
+				break;
+			}
+		}
 
 		// Handle events on queue
 		while (SDL_PollEvent(&e) != 0)
@@ -195,61 +170,54 @@ int main(int argc, char *args[])
 				}
 				snakeBody[0].x = snakeHead.x;
 				snakeBody[0].y = snakeHead.y;
-
-				if (e.key.keysym.sym == SDLK_LEFT)
+				if (direction == LEFT)
 				{
-					snakeHead.x = (snakeHead.x + SCREEN_WIDTH - step) % SCREEN_WIDTH;
-					direction = LEFT;
+					if (e.key.keysym.sym == SDLK_DOWN)
+					{
+						direction = DOWN;
+					}
+					if (e.key.keysym.sym == SDLK_UP)
+					{
+						direction = UP;
+					}
 				}
-				// Tương tự với dịch phải, xuống và lên
-				if (e.key.keysym.sym == SDLK_RIGHT)
+				if (direction == RIGHT)
 				{
-					snakeHead.x = (snakeHead.x + step) % SCREEN_WIDTH;
-					direction = RIGHT;
+
+					if (e.key.keysym.sym == SDLK_DOWN)
+					{
+						direction = DOWN;
+					}
+					if (e.key.keysym.sym == SDLK_UP)
+					{
+						direction = UP;
+					}
 				}
-				if (e.key.keysym.sym == SDLK_DOWN)
+				if (direction == UP)
 				{
-					snakeHead.y = (snakeHead.y + step) % SCREEN_HEIGHT;
-					direction = DOWN;
+					if (e.key.keysym.sym == SDLK_LEFT)
+					{
+						direction = LEFT;
+					}
+					// Tương tự với dịch phải, xuống và lên
+					if (e.key.keysym.sym == SDLK_RIGHT)
+					{
+						direction = RIGHT;
+					}
 				}
-				if (e.key.keysym.sym == SDLK_UP)
+				if (direction == DOWN)
 				{
-					snakeHead.y = (snakeHead.y + SCREEN_HEIGHT - step) % SCREEN_HEIGHT;
-					direction = UP;
+					if (e.key.keysym.sym == SDLK_LEFT)
+					{
+						direction = LEFT;
+					}
+					// Tương tự với dịch phải, xuống và lên
+					if (e.key.keysym.sym == SDLK_RIGHT)
+					{
+						direction = RIGHT;
+					}
 				}
 
-				// 	// xoa het man hinh
-				// 	SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 255);
-				// 	SDL_RenderClear(gRenderer);
-
-				// 	// ve lai cai dau
-				// 	SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 255);
-				// 	SDL_RenderFillRect(gRenderer, &snakeHead);
-				// 	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
-
-				// 	// nếu con rắn đến chỗ cái để ăn
-				// 	if (snakeHead.x == point.x && snakeHead.y == point.y)
-				// 	{
-				// 		// chuyển point ra chỗ khác
-				// 		point.x = (rand() % (SCREEN_HEIGHT / 10 + 1)) * 10;
-				// 		point.y = (rand() % (SCREEN_WIDTH / 10 + 1)) * 10;
-				// 		snakeBodyLength++;
-				// 		snakeBody[snakeBodyLength - 1].x = snakeBody[snakeBodyLength - 2].x;
-				// 		snakeBody[snakeBodyLength - 1].y = snakeBody[snakeBodyLength - 2].y;
-				// 	}
-
-				// 	// ve lai phan than
-				// 	for (int i = 0; i < snakeBodyLength; i++)
-				// 	{
-				// 		SDL_RenderFillRect(gRenderer, &snakeBody[i]);
-				// 	}
-
-				// 	// vẽ lại cái để ăn
-				// 	SDL_SetRenderDrawColor(gRenderer, 0, 255, 255, 0xFF);
-				// 	SDL_RenderFillRect(gRenderer, &point);
-
-				// 	SDL_RenderPresent(gRenderer);
-				// }
 				if (snakeHead.x == point.x && snakeHead.y == point.y)
 				{
 					// chuyển point ra chỗ khác
@@ -260,9 +228,9 @@ int main(int argc, char *args[])
 					snakeBody[snakeBodyLength - 1].y = snakeBody[snakeBodyLength - 2].y;
 				}
 				// vẽ lại cái để ăn
-				SDL_SetRenderDrawColor(gRenderer, 0, 255, 255, 0xFF);
+				SDL_SetRenderDrawColor(gRenderer, 255, 51, 0, 0xFF);
 				SDL_RenderFillRect(gRenderer, &point);
-				snakeMovement(snakeHead, snakeBody, point, snakeBodyLength, direction);
+				snakeMove(snakeHead, snakeBody, point, snakeBodyLength, direction);
 			}
 		}
 	}
