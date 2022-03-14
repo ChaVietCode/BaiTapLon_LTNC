@@ -5,10 +5,11 @@
 #include <math.h>
 #include <cstdlib>
 #include <ctime>
+using namespace std;
 
 // Screen dimension constants
-const int SCREEN_WIDTH = 400;
-const int SCREEN_HEIGHT = 400;
+const int SCREEN_WIDTH = 600;
+const int SCREEN_HEIGHT = 600;
 
 // The window we'll be rendering to
 SDL_Window *gWindow = NULL;
@@ -18,9 +19,12 @@ SDL_Renderer *gRenderer = NULL;
 
 // Current displayed texture
 SDL_Texture *gTexture = NULL;
+SDL_Surface *gScreenSurface = NULL;
 
 int step = 10;
 int snakeBodyLength = 3;
+bool gameContinue = true;
+bool gameOver = false;
 
 enum
 {
@@ -29,6 +33,23 @@ enum
 	UP,
 	DOWN
 };
+
+void snakeMove(SDL_Rect &snakeHead, SDL_Rect *snakeBody, SDL_Rect &point, int &snakeBodyLength, int direction);
+
+void renderImage();
+// void renderImage(string path);
+
+void playGame();
+
+int main(int argc, char *args[])
+{
+	gWindow = SDL_CreateWindow("Snake", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+	gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
+
+	playGame();
+
+	return 0;
+}
 
 void snakeMove(SDL_Rect &snakeHead, SDL_Rect *snakeBody, SDL_Rect &point, int &snakeBodyLength, int direction)
 {
@@ -86,18 +107,25 @@ void snakeMove(SDL_Rect &snakeHead, SDL_Rect *snakeBody, SDL_Rect &point, int &s
 	SDL_Delay(100);
 }
 
-int main(int argc, char *args[])
+// void renderImage(string path)
+void renderImage()
 {
-	gWindow = SDL_CreateWindow("Snake", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-	gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
+	SDL_Surface *loadedSurface = IMG_Load("src/image/GameOver.png");
+	// SDL_Surface *loadedSurface = IMG_Load(path.c_str());
+	SDL_Texture *texture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
+	SDL_RenderCopy(gRenderer, texture, NULL, NULL);
+	SDL_RenderPresent(gRenderer);
+}
 
+void playGame()
+{
 	// tạo phần đầu
 	SDL_Rect snakeHead;
 	snakeHead.x = SCREEN_HEIGHT / 2;
 	snakeHead.y = SCREEN_WIDTH / 2;
 	snakeHead.w = 10;
 	snakeHead.h = 10;
-	SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 255);
+	SDL_SetRenderDrawColor(gRenderer, 255, 255, 0, 255);
 	SDL_RenderFillRect(gRenderer, &snakeHead);
 
 	// tạo phần thân
@@ -115,7 +143,7 @@ int main(int argc, char *args[])
 	snakeBody[1].y = snakeHead.y;
 	snakeBody[2].x = snakeHead.x - 30;
 	snakeBody[2].y = snakeHead.y;
-	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
+	SDL_SetRenderDrawColor(gRenderer, 102, 255, 51, 0xFF);
 	SDL_RenderFillRect(gRenderer, &snakeBody[0]);
 	SDL_RenderFillRect(gRenderer, &snakeBody[1]);
 	SDL_RenderFillRect(gRenderer, &snakeBody[2]);
@@ -125,8 +153,8 @@ int main(int argc, char *args[])
 	point.w = 10;
 	point.h = 10;
 	srand(time(NULL));
-	point.x = (rand() % (SCREEN_HEIGHT / 10 + 1)) * 10;
-	point.y = (rand() % (SCREEN_WIDTH / 10 + 1)) * 10;
+	point.x = (rand() % (SCREEN_HEIGHT / 10)) * 10;
+	point.y = (rand() % (SCREEN_WIDTH / 10)) * 10;
 
 	SDL_SetRenderDrawColor(gRenderer, 0, 255, 255, 0xFF);
 	SDL_RenderFillRect(gRenderer, &point);
@@ -139,15 +167,41 @@ int main(int argc, char *args[])
 	SDL_Event e;
 	while (!quit)
 	{
+		if (e.type == SDL_QUIT)
+		{
+			quit = true;
+			break;
+		}
 		snakeMove(snakeHead, snakeBody, point, snakeBodyLength, direction);
-		
+
 		// nếu đâm vào đuôi
 		for (int i = 0; i < snakeBodyLength; i++)
 		{
 			if (snakeHead.x == snakeBody[i].x && snakeHead.y == snakeBody[i].y)
 			{
-				quit = true;
-				break;
+				snakeBodyLength = 3;
+				SDL_Event event;
+				bool quit2 = false;
+				while (!quit)
+				{
+					renderImage();
+					if (SDL_WaitEvent(&event))
+					{
+						if (event.type == SDL_QUIT)
+						{
+							quit = true;
+						}
+						if (event.key.keysym.sym == SDLK_y)
+						{
+							playGame();
+						}
+						if (event.key.keysym.sym == SDLK_n)
+						{
+							quit = true;
+							break;
+						}
+					}
+				}
 			}
 		}
 
@@ -159,6 +213,7 @@ int main(int argc, char *args[])
 			if (e.type == SDL_QUIT)
 			{
 				quit = true;
+				break;
 			}
 			else if (e.type == SDL_KEYDOWN)
 			{
@@ -234,5 +289,4 @@ int main(int argc, char *args[])
 			}
 		}
 	}
-	return 0;
 }
