@@ -50,18 +50,6 @@ void loadSound(string path);
 
 void playGame();
 
-void loadText2(const string &font_path, int font_size, const string &text, const SDL_Color color, int x, int y, int w, int h)
-{
-	TTF_Font *font = TTF_OpenFont(font_path.c_str(), font_size);
-	auto textSurface = TTF_RenderText_Solid(font, text.c_str(), color);
-	auto textTexture = SDL_CreateTextureFromSurface(gRenderer, textSurface);
-	SDL_Rect rect = {x, y, w, h};
-	SDL_RenderCopy(gRenderer, textTexture, NULL, &rect);
-	SDL_FreeSurface(textSurface);
-	SDL_RenderPresent(gRenderer);
-	SDL_DestroyTexture(textTexture);
-}
-
 void loadText(const string &font_path, int font_size, const string &text, const SDL_Color color, int x, int y, int w, int h)
 {
 	TTF_Font *font = TTF_OpenFont(font_path.c_str(), font_size);
@@ -88,41 +76,7 @@ void close()
 
 void hscore(SDL_Event e);
 
-void gameover()
-{
-	if (score > highscore)
-	{
-		ofstream fout;
-		fout.open("highscore.txt");
-		fout << score;
-		fout.close();
-	}
-	SDL_Event event;
-	bool quit2 = false;
-	while (!quit2)
-	{
-		renderImage("image/GameOver.png");
-		if (SDL_WaitEvent(&event))
-		{
-			if (event.type == SDL_QUIT)
-			{
-				quit2 = true;
-				exit(0);
-				break;
-			}
-			if (event.key.keysym.sym == SDLK_y)
-			{
-				playGame();
-			}
-			if (event.key.keysym.sym == SDLK_n)
-			{
-				quit2 = true;
-				exit(0);
-				break;
-			}
-		}
-	}
-}
+void gameover();
 
 void startmenu(int button)
 {
@@ -242,19 +196,11 @@ void startmenu(int button)
 
 int main(int argc, char *args[])
 {
+	SDL_Init(SDL_INIT_EVERYTHING);
 	gWindow = SDL_CreateWindow("Snake", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
 	gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
 
 	TTF_Init();
-
-	// bool quit = false;
-
-	// SDL_Event e;
-	// while (!quit)
-	// {
-	// 	startmenu();
-	// 	quit = true;
-	// }
 
 	startmenu(0);
 	close();
@@ -407,7 +353,7 @@ int snakeMoves(SDL_Rect &snakeHead, SDL_Rect *snakeBody, SDL_Rect *wall, SDL_Rec
 	stringstream ss;
 	ss << score;
 	ss >> s;
-	loadText("font/PressStart2P.ttf", 15, "SCORE:" + s, {100, 100, 100, 255}, 50, 500, 200, 30);
+	loadText("font/PressStart2P.ttf", 17, "SCORE:" + s, {100, 100, 100, 255}, 50, 510, 200, 30);
 	SDL_RenderPresent(gRenderer);
 	SDL_Delay(100);
 	return flag;
@@ -556,7 +502,10 @@ void playGame()
 	SDL_RenderPresent(gRenderer);
 
 	int direction = RIGHT;
-
+	string s;
+	stringstream ss;
+	ss << score;
+	ss >> s;
 	bool quit = false;
 	SDL_Event e;
 	while (!quit)
@@ -621,10 +570,13 @@ void playGame()
 			{
 				if (e.key.keysym.sym == SDLK_ESCAPE)
 				{
+					string s;
+					stringstream ss;
+					ss << score;
+					ss >> s;
 					renderImage("image/pause0.png");
-
+					loadText("font/PressStart2P.ttf", 26, s, {255, 255, 255, 255}, 305, 90, 200, 40);
 					bool quit3 = false;
-
 					// Event handler
 					SDL_Event e;
 					int button = 0;
@@ -646,6 +598,7 @@ void playGame()
 							// User presses a key
 							else if (e.type == SDL_KEYDOWN)
 							{
+
 								if (e.key.keysym.sym == SDLK_ESCAPE)
 								{
 									quit3 = true;
@@ -655,18 +608,22 @@ void playGame()
 								{
 									button = 0;
 									renderImage("image/pause0.png");
+									loadText("font/PressStart2P.ttf", 26, s, {255, 255, 255, 255}, 305, 90, 200, 40);
 								}
 								if (e.key.keysym.sym == SDLK_DOWN && button == 0)
 								{
 									button = 1;
 									renderImage("image/pause1.png");
+									loadText("font/PressStart2P.ttf", 26, s, {255, 255, 255, 255}, 305, 90, 200, 40);
 								}
-								if (e.key.keysym.sym == SDLK_RETURN && button == 1){
-									snakeBodyLength=3;
+								if (e.key.keysym.sym == SDLK_RETURN && button == 1)
+								{
+									snakeBodyLength = 3;
 									startmenu(0);
 								}
-								if (e.key.keysym.sym == SDLK_RETURN && button == 0){
-									quit3=true;
+								if (e.key.keysym.sym == SDLK_RETURN && button == 0)
+								{
+									quit3 = true;
 									break;
 								}
 							}
@@ -804,7 +761,7 @@ void hscore(SDL_Event e)
 	stringstream ss;
 	ss << highscore;
 	ss >> s;
-	loadText("font/PressStart2P.ttf", 22, "HIGH SCORES: " + s, {255, 255, 255, 255}, 60, 200, 30, 30);
+	loadText("font/PressStart2P.ttf", 22, "HIGH SCORE: " + s, {255, 255, 255, 255}, 60, 200, 30, 30);
 	loadText("font/PressStart2P.ttf", 22, "(Press any key to exit) ", {255, 255, 255, 255}, 60, 250, 30, 30);
 	loadText("font/PressStart2P.ttf", 22, "       < BACK ", {255, 255, 255, 255}, 60, 500, 30, 30);
 	int flag = 0;
@@ -834,6 +791,102 @@ void hscore(SDL_Event e)
 				startmenu(1);
 				quit = true;
 				break;
+			}
+		}
+	}
+}
+
+void gameover()
+{
+	loadSound("sound/end.wav");
+	if (score > highscore)
+	{
+		ofstream fout;
+		fout.open("highscore.txt");
+		fout << score;
+		fout.close();
+	}
+	SDL_Event event;
+	bool quit2 = false;
+	while (!quit2)
+	{
+		// renderImage("image/GameOver.png");
+		// if (SDL_WaitEvent(&event))
+		// {
+		// 	if (event.type == SDL_QUIT)
+		// 	{
+		// 		quit2 = true;
+		// 		exit(0);
+		// 		break;
+		// 	}
+		// 	if (event.key.keysym.sym == SDLK_y)
+		// 	{
+		// 		playGame();
+		// 	}
+		// 	if (event.key.keysym.sym == SDLK_n)
+		// 	{
+		// 		quit2 = true;
+		// 		exit(0);
+		// 		break;
+		// 	}
+		// }
+		string s;
+		stringstream ss;
+		ss << score;
+		ss >> s;
+		renderImage("image/gameover0.png");
+		loadText("font/PressStart2P.ttf", 26, s, {255, 255, 255, 255}, 305, 90, 200, 40);
+		bool quit3 = false;
+		// Event handler
+		SDL_Event e;
+		int button = 0;
+		// While application is running
+		while (!quit3)
+		{
+			// Handle events on queue
+			while (SDL_PollEvent(&e) != 0)
+			{
+
+				// User requests quit
+				if (e.type == SDL_QUIT)
+				{
+					quit3 = true;
+					exit(0);
+					break;
+				}
+
+				// User presses a key
+				else if (e.type == SDL_KEYDOWN)
+				{
+
+					if (e.key.keysym.sym == SDLK_ESCAPE)
+					{
+						quit3 = true;
+						break;
+					}
+					if (e.key.keysym.sym == SDLK_UP && button == 1)
+					{
+						button = 0;
+						renderImage("image/gameover0.png");
+						loadText("font/PressStart2P.ttf", 26, s, {255, 255, 255, 255}, 305, 90, 200, 40);
+					}
+					if (e.key.keysym.sym == SDLK_DOWN && button == 0)
+					{
+						button = 1;
+						renderImage("image/gameover1.png");
+						loadText("font/PressStart2P.ttf", 26, s, {255, 255, 255, 255}, 305, 90, 200, 40);
+					}
+					if (e.key.keysym.sym == SDLK_RETURN && button == 1)
+					{
+						snakeBodyLength = 3;
+						startmenu(0);
+					}
+					if (e.key.keysym.sym == SDLK_RETURN && button == 0)
+					{
+						snakeBodyLength = 3;
+						playGame();
+					}
+				}
 			}
 		}
 	}
