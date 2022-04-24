@@ -17,9 +17,12 @@
             "intelliSenseMode": "windows-msvc-x64"
         },
         {
-            "name": "C++ cofig",
+            "name": "Bai_tap_lo",
             "includePath": [
-                "${default}"
+                "d:/C++/BaiTapLon_LTNC/src/include",
+                "${workspaceFolder}/**",
+                "d:/C++/BaiTapLon_LTNC/",
+                "${workspaceFolder}"
             ],
             "defines": [
                 "_DEBUG",
@@ -30,7 +33,48 @@
             "compilerPath": "C:/MinGW/bin/g++.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "windows-gcc-x86"
+            "intelliSenseMode": "windows-gcc-x86",
+            "compilerArgs": [
+                "-lmingw32",
+                "-lSDL2main",
+                "-lSDL2",
+                "-lSDL2_image",
+                "-lSDL2_mixer",
+                "-lSDL2_ttf"
+            ]
+        },
+        {
+            "name": "Bai_tap_lon",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "D:\\C++\\BaiTapLon_LTNC\\src\\include"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "windowsSdkVersion": "10.0.19041.0",
+            "compilerPath": "C:/MinGW/bin/g++.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-gcc-x86",
+            "compilerArgs": [
+                "-lmingw32",
+                "-lSDL2main",
+                "-lSDL2",
+                "-lSDL2_image",
+                "-lSDL2_mixer",
+                "-lSDL2_ttf"
+            ],
+            "mergeConfigurations": false,
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/**",
+                    "D:/SDL 2.0 mingw/SDL2-2.0.20/x86_64-w64-mingw32/include/SDL2"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
         }
     ],
     "version": 4

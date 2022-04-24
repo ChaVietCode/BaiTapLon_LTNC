@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <sstream>
+#include <fstream>
 using namespace std;
 
 // Screen dimension constants
@@ -26,8 +27,9 @@ SDL_Surface *gScreenSurface = NULL;
 
 int step = 10;
 int snakeBodyLength = 3;
-int total_wall = 220;
+const int total_wall = 220;
 int score = 0;
+int highscore;
 
 enum direction
 {
@@ -40,7 +42,7 @@ enum direction
 // void snakeMove(SDL_Rect &snakeHead, SDL_Rect *snakeBody, SDL_Rect &point, int &snakeBodyLength, int direction);
 
 // di chuyen con ran theo 1 huong xac dinh
-void snakeMoves(SDL_Rect &snakeHead, SDL_Rect *snakeBody, SDL_Rect *wall, SDL_Rect &point, int &snakeBodyLength, int direction);
+int snakeMoves(SDL_Rect &snakeHead, SDL_Rect *snakeBody, SDL_Rect *wall, SDL_Rect &point, int &snakeBodyLength, int direction);
 
 void renderImage(string path);
 
@@ -48,9 +50,9 @@ void loadSound(string path);
 
 void playGame();
 
-void loadText(const string &path, int font_size, const string &text, const SDL_Color color, int x, int y, int w, int h)
+void loadText2(const string &font_path, int font_size, const string &text, const SDL_Color color, int x, int y, int w, int h)
 {
-	TTF_Font *font = TTF_OpenFont(path.c_str(), font_size);
+	TTF_Font *font = TTF_OpenFont(font_path.c_str(), font_size);
 	auto textSurface = TTF_RenderText_Solid(font, text.c_str(), color);
 	auto textTexture = SDL_CreateTextureFromSurface(gRenderer, textSurface);
 	SDL_Rect rect = {x, y, w, h};
@@ -60,20 +62,84 @@ void loadText(const string &path, int font_size, const string &text, const SDL_C
 	SDL_DestroyTexture(textTexture);
 }
 
-int main(int argc, char *args[])
+void loadText(const string &font_path, int font_size, const string &text, const SDL_Color color, int x, int y, int w, int h)
 {
-	gWindow = SDL_CreateWindow("Snake", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-	gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
+	TTF_Font *font = TTF_OpenFont(font_path.c_str(), font_size);
+	auto textSurface = TTF_RenderText_Solid(font, text.c_str(), color);
+	auto textTexture = SDL_CreateTextureFromSurface(gRenderer, textSurface);
+	TTF_SizeText(font, text.c_str(), &w, &h);
+	SDL_Rect rect = {x, y, w, h};
+	SDL_RenderCopy(gRenderer, textTexture, NULL, &rect);
+	SDL_FreeSurface(textSurface);
+	SDL_RenderPresent(gRenderer);
+	SDL_DestroyTexture(textTexture);
+}
 
-	renderImage("image/StartMenu2.png");
-	// SDL_Color textColor =
-	TTF_Init();
+void close()
+{
+	SDL_DestroyTexture(gTexture);
+	gTexture = nullptr;
+	// Destroy window
+	SDL_DestroyWindow(gWindow);
+	gWindow = NULL;
+	// Quit SDL subsystems
+	SDL_Quit();
+}
 
+void hscore(SDL_Event e);
+
+void gameover()
+{
+	if (score > highscore)
+	{
+		ofstream fout;
+		fout.open("highscore.txt");
+		fout << score;
+		fout.close();
+	}
+	SDL_Event event;
+	bool quit2 = false;
+	while (!quit2)
+	{
+		renderImage("image/GameOver.png");
+		if (SDL_WaitEvent(&event))
+		{
+			if (event.type == SDL_QUIT)
+			{
+				quit2 = true;
+				exit(0);
+				break;
+			}
+			if (event.key.keysym.sym == SDLK_y)
+			{
+				playGame();
+			}
+			if (event.key.keysym.sym == SDLK_n)
+			{
+				quit2 = true;
+				exit(0);
+				break;
+			}
+		}
+	}
+}
+
+void startmenu(int button)
+{
+	char a = button + '0';
+	string s;
+	s.push_back(a);
+	renderImage("image/start" + s + ".png");
+	enum
+	{
+		START,
+		HIGHSCORES,
+		EXIT
+	};
 	bool quit = false;
 
 	// Event handler
 	SDL_Event e;
-	int a = 2;
 	// While application is running
 	while (!quit)
 	{
@@ -85,71 +151,117 @@ int main(int argc, char *args[])
 			if (e.type == SDL_QUIT)
 			{
 				quit = true;
+				exit(0);
 				break;
 			}
 
 			// User presses a key
 			else if (e.type == SDL_KEYDOWN)
 			{
-				if (e.key.keysym.sym == SDLK_DOWN)
+				if (e.key.keysym.sym == SDLK_UP && button > 0)
 				{
-					renderImage("image/StartMenu3.png");
-					a = 3;
+					button--;
 				}
-				if (e.key.keysym.sym == SDLK_UP)
+				if (e.key.keysym.sym == SDLK_DOWN && button < 2)
 				{
-					renderImage("image/StartMenu2.png");
-					a = 2;
+					button++;
 				}
-				if (e.key.keysym.sym == SDLK_RETURN && a == 2)
+				if (button == START)
+				{
+					renderImage("image/start0.png");
+				}
+				if (button == HIGHSCORES)
+				{
+					renderImage("image/start1.png");
+				}
+				if (button == EXIT)
+				{
+					renderImage("image/start2.png");
+				}
+				if (e.key.keysym.sym == SDLK_RETURN && button == START)
 				{
 					loadSound("sound/StartGameSound.wav");
 					playGame();
 					quit = true;
 				}
-				if (e.key.keysym.sym == SDLK_RETURN && a == 3)
+				if (e.key.keysym.sym == SDLK_RETURN && button == HIGHSCORES)
+				{
+					hscore(e);
+				}
+				if (e.key.keysym.sym == SDLK_RETURN && button == EXIT)
 				{
 					quit = true;
+					exit(0);
+
 					break;
 				}
 			}
 			else if (e.type == SDL_MOUSEMOTION)
 			{
-				if (e.button.x < 500 && e.button.x > 90 && e.button.y > 300 && e.button.y < 330)
+				if (e.button.x < 440 && e.button.x > 150 && e.button.y > 250 && e.button.y < 272)
 				{
-					renderImage("image/StartMenu2.png");
-					a = 2;
+					renderImage("image/start0.png");
+					button = START;
 				}
-				if (e.button.x < 430 && e.button.x > 160 && e.button.y > 355 && e.button.y < 382)
+				if (e.button.x < 451 && e.button.x > 137 && e.button.y > 305 && e.button.y < 329)
 				{
-					renderImage("image/StartMenu3.png");
-					a = 3;
+					renderImage("image/start1.png");
+					button = HIGHSCORES;
+				}
+				if (e.button.x < 350 && e.button.x > 237 && e.button.y > 361 && e.button.y < 386)
+				{
+					renderImage("image/start2.png");
+					button = EXIT;
 				}
 			}
 			else if (e.type == SDL_MOUSEBUTTONDOWN)
 			{
 				if (e.button.button == SDL_BUTTON_LEFT)
 				{
-					if (a == 2)
+					if (button == START)
 					{
 						loadSound("sound/StartGameSound.wav");
 						playGame();
 						quit = true;
 					}
-					if (a == 3)
+					if (button == HIGHSCORES)
+					{
+						hscore(e);
+					}
+					if (button == EXIT)
 					{
 						quit = true;
+						exit(0);
 						break;
 					}
 				}
 			}
 		}
 	}
+}
 
+int main(int argc, char *args[])
+{
+	gWindow = SDL_CreateWindow("Snake", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+	gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
+
+	TTF_Init();
+
+	// bool quit = false;
+
+	// SDL_Event e;
+	// while (!quit)
+	// {
+	// 	startmenu();
+	// 	quit = true;
+	// }
+
+	startmenu(0);
+	close();
 	return 0;
 }
 
-void snakeMoves(SDL_Rect &snakeHead, SDL_Rect *snakeBody, SDL_Rect *wall, SDL_Rect &point, int &snakeBodyLength, int direction)
+int snakeMoves(SDL_Rect &snakeHead, SDL_Rect *snakeBody, SDL_Rect *wall, SDL_Rect &point, int &snakeBodyLength, int direction)
 {
 	// di chuyển phần thân
 	for (int i = snakeBodyLength - 1; i > 0; i--)
@@ -180,7 +292,7 @@ void snakeMoves(SDL_Rect &snakeHead, SDL_Rect *snakeBody, SDL_Rect *wall, SDL_Re
 	SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 255);
 	SDL_RenderClear(gRenderer);
 
-	for (int i = 0; i < 3600; i++)
+	for (int i = 0; i < total_wall; i++)
 	{
 		wall[i].w = 10;
 		wall[i].h = 10;
@@ -239,6 +351,17 @@ void snakeMoves(SDL_Rect &snakeHead, SDL_Rect *snakeBody, SDL_Rect *wall, SDL_Re
 	{
 		SDL_RenderFillRect(gRenderer, &snakeBody[i]);
 	}
+
+	int flag = 0;
+	for (int i = 0; i < max(snakeBodyLength, total_wall); i++)
+	{
+		if ((snakeHead.x == snakeBody[i].x && snakeHead.y == snakeBody[i].y) || (snakeHead.x == wall[i].x && snakeHead.y == wall[i].y))
+		{
+			snakeBodyLength = 3;
+			flag = 1;
+		}
+	}
+
 	if (snakeHead.x == point.x && snakeHead.y == point.y)
 	{
 		score = score + 10;
@@ -287,6 +410,7 @@ void snakeMoves(SDL_Rect &snakeHead, SDL_Rect *snakeBody, SDL_Rect *wall, SDL_Re
 	loadText("font/PressStart2P.ttf", 15, "SCORE:" + s, {100, 100, 100, 255}, 50, 500, 200, 30);
 	SDL_RenderPresent(gRenderer);
 	SDL_Delay(100);
+	return flag;
 }
 
 void renderImage(string path)
@@ -315,11 +439,14 @@ void playGame()
 	const int snakeMaxLength = SCREEN_HEIGHT * SCREEN_WIDTH / 100;
 	SDL_Rect snakeBody[snakeMaxLength];
 	// tạo tường
-	SDL_Rect wall[3600];
+	SDL_Rect wall[total_wall];
 	for (int i = 0; i < snakeMaxLength; i++)
 	{
 		snakeBody[i].w = 10;
 		snakeBody[i].h = 10;
+	}
+	for (int i = 0; i < total_wall; i++)
+	{
 		wall[i].w = 10;
 		wall[i].h = 10;
 	}
@@ -336,7 +463,7 @@ void playGame()
 	SDL_RenderFillRect(gRenderer, &snakeBody[2]);
 
 	// tao map
-	for (int i = 0; i < 3600; i++)
+	for (int i = 0; i < total_wall; i++)
 	{
 		wall[i].w = 10;
 		wall[i].h = 10;
@@ -439,7 +566,11 @@ void playGame()
 			quit = true;
 			break;
 		}
-		snakeMoves(snakeHead, snakeBody, wall, point, snakeBodyLength, direction);
+		if (snakeMoves(snakeHead, snakeBody, wall, point, snakeBodyLength, direction))
+		{
+			gameover();
+			quit = true;
+		}
 
 		// nếu đâm vào đuôi
 		for (int i = 0; i < max(snakeBodyLength, total_wall); i++)
@@ -458,6 +589,7 @@ void playGame()
 						{
 							quit2 = true;
 							quit = true;
+							exit(0);
 							break;
 						}
 						if (event.key.keysym.sym == SDLK_y)
@@ -466,7 +598,9 @@ void playGame()
 						}
 						if (event.key.keysym.sym == SDLK_n)
 						{
+							quit2 = true;
 							quit = true;
+							exit(0);
 							break;
 						}
 					}
@@ -480,10 +614,66 @@ void playGame()
 			if (e.type == SDL_QUIT)
 			{
 				quit = true;
+				exit(0);
 				break;
 			}
 			else if (e.type == SDL_KEYDOWN)
 			{
+				if (e.key.keysym.sym == SDLK_ESCAPE)
+				{
+					renderImage("image/pause0.png");
+
+					bool quit3 = false;
+
+					// Event handler
+					SDL_Event e;
+					int button = 0;
+					// While application is running
+					while (!quit3)
+					{
+						// Handle events on queue
+						while (SDL_PollEvent(&e) != 0)
+						{
+
+							// User requests quit
+							if (e.type == SDL_QUIT)
+							{
+								quit3 = true;
+								exit(0);
+								break;
+							}
+
+							// User presses a key
+							else if (e.type == SDL_KEYDOWN)
+							{
+								if (e.key.keysym.sym == SDLK_ESCAPE)
+								{
+									quit3 = true;
+									break;
+								}
+								if (e.key.keysym.sym == SDLK_UP && button == 1)
+								{
+									button = 0;
+									renderImage("image/pause0.png");
+								}
+								if (e.key.keysym.sym == SDLK_DOWN && button == 0)
+								{
+									button = 1;
+									renderImage("image/pause1.png");
+								}
+								if (e.key.keysym.sym == SDLK_RETURN && button == 1){
+									snakeBodyLength=3;
+									startmenu(0);
+								}
+								if (e.key.keysym.sym == SDLK_RETURN && button == 0){
+									quit3=true;
+									break;
+								}
+							}
+						}
+					}
+				}
+
 				// dua phan truoc ve vi tri sau
 				for (int i = snakeBodyLength - 1; i > 0; i--)
 				{
@@ -581,7 +771,11 @@ void playGame()
 				// vẽ lại cái để ăn
 				SDL_SetRenderDrawColor(gRenderer, 255, 51, 0, 0xFF);
 				SDL_RenderFillRect(gRenderer, &point);
-				snakeMoves(snakeHead, snakeBody, wall, point, snakeBodyLength, direction);
+				if (snakeMoves(snakeHead, snakeBody, wall, point, snakeBodyLength, direction))
+				{
+					gameover();
+					quit = true;
+				}
 			}
 		}
 	}
@@ -592,4 +786,55 @@ void loadSound(string path)
 	Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 4096);
 	Mix_Chunk *sound = Mix_LoadWAV(path.c_str());
 	Mix_PlayChannel(-1, sound, 0);
+}
+
+void hscore(SDL_Event e)
+{
+	renderImage("highscore1.png");
+	SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 255);
+	SDL_RenderClear(gRenderer);
+	ifstream myfile("highscore.txt");
+	string line;
+	if (myfile.is_open())
+	{
+		myfile >> highscore;
+	}
+	myfile.close();
+	string s;
+	stringstream ss;
+	ss << highscore;
+	ss >> s;
+	loadText("font/PressStart2P.ttf", 22, "HIGH SCORES: " + s, {255, 255, 255, 255}, 60, 200, 30, 30);
+	loadText("font/PressStart2P.ttf", 22, "(Press any key to exit) ", {255, 255, 255, 255}, 60, 250, 30, 30);
+	loadText("font/PressStart2P.ttf", 22, "       < BACK ", {255, 255, 255, 255}, 60, 500, 30, 30);
+	int flag = 0;
+	bool quit = false;
+	while (!quit)
+	{
+		while (SDL_PollEvent(&e) != 0)
+		{
+			// User requests quit
+			if (e.type == SDL_QUIT)
+			{
+				quit = true;
+				exit(0);
+				break;
+			}
+			else if (e.type == SDL_MOUSEBUTTONDOWN)
+			{
+				if ((e.button.button == SDL_BUTTON_LEFT) && (e.button.x < 346 && e.button.x > 215 && e.button.y > 500 && e.button.y < 520))
+				{
+					startmenu(1);
+					quit = true;
+					break;
+				}
+			}
+			else if (e.type == SDL_KEYDOWN)
+			{
+				startmenu(1);
+				quit = true;
+				break;
+			}
+		}
+	}
 }
